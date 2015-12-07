@@ -22,3 +22,8 @@ to make function keys behave as function keys by default. You can also revert th
 $sudo ./k480_conf -d /dev/hidraw2 -f off
 
 which will make media keys default and function keys accessible by (fn + function key).
+
+To keep this setting after a restart you need to tell Ubuntu to run the script for you.
+
+Here is one of possible rules to be put in /etc/udev/rules.d/99-k480.rules:
+SUBSYSTEM=="hidraw", ACTION=="add", SUBSYSTEMS=="bluetooth", ATTRS{address}=="00:1f:20:e3:6c:b6", RUN+="/opt/bin/k480_conf -d /dev/%k -f on"
