@@ -158,7 +158,7 @@ int main(int argc, char **argv)
 			errno = EPERM;
 			perror("The given device is not a supported "
 			       "Logitech keyboard");
-			printf("Product : %x", info.product);
+			printf("Product : %x\n", info.product);
 
 			return 1;
 		}
