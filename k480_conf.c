@@ -33,10 +33,16 @@
 //If using k810 #define HID_DEVICE_ID_K810                      (__s16)0xb319
 #define HID_DEVICE_ID_K480                      (__s16)0xb330
 #define HID_DEVICE_ID_K480_ALT                  (__s16)0xb33c
+// The folowing HID_DEVICE_ID_K480_ALT2 uses the k380 key sequences!
+#define HID_DEVICE_ID_K480_ALT2                  (__s16)0xb33d
 
 
 const char k480_seq_fkeys_on[]  = {0x10, 0xff, 0x08, 0x1c, 0x00, 0x00, 0x00};
 const char k480_seq_fkeys_off[] = {0x10, 0xff, 0x08, 0x1c, 0x01, 0x00, 0x00};
+
+// from: https://github.com/jergusg/k380-function-keys-conf/blob/master/k380_conf.c
+const char k380_seq_fkeys_on[]  = {0x10, 0xff, 0x0b, 0x1e, 0x00, 0x00, 0x00};
+const char k380_seq_fkeys_off[] = {0x10, 0xff, 0x0b, 0x1e, 0x01, 0x00, 0x00};
 
 //const char k810_seq_fkeys_on[]  = {0x10, 0xff, 0x06, 0x15, 0x00, 0x00, 0x00};
 //const char k810_seq_fkeys_off[] = {0x10, 0xff, 0x06, 0x15, 0x01, 0x00, 0x00};
@@ -57,8 +63,8 @@ void send(const int fd, const char * buf, const int len)
 		perror("write");
 	}
 	else if (res == len)
-       	{
-		// printf("Configuration sent.\n");
+    {
+		printf("Configuration sent.\n");
 	}
 	else
 	{
@@ -149,11 +155,12 @@ int main(int argc, char **argv)
 		perror("error while getting info from device");
 	}
 	else
-       	{
+    {
 		if (info.bustype != BUS_BLUETOOTH ||
 		    info.vendor  != HID_VENDOR_ID_LOGITECH ||
-		    (info.product != HID_DEVICE_ID_K480 &&
-					info.product != HID_DEVICE_ID_K480_ALT))
+		   (info.product != HID_DEVICE_ID_K480 &&
+            info.product != HID_DEVICE_ID_K480_ALT &&
+            info.product != HID_DEVICE_ID_K480_ALT2))
 		{
 			errno = EPERM;
 			perror("The given device is not a supported "
@@ -167,12 +174,18 @@ int main(int argc, char **argv)
 	if (flag_fkeys)
 	{
 		printf("Sending ON: \n");
-		send(fd, k480_seq_fkeys_on,  sizeof(k480_seq_fkeys_on));
+        if (info.product == HID_DEVICE_ID_K480_ALT2)
+            send(fd, k380_seq_fkeys_on,  sizeof(k380_seq_fkeys_on));
+        else
+            send(fd, k480_seq_fkeys_on,  sizeof(k480_seq_fkeys_on));
 	}
 	else
 	{
 		printf("Sending OFF: \n");
-		send(fd, k480_seq_fkeys_off, sizeof(k480_seq_fkeys_off));
+        if (info.product == HID_DEVICE_ID_K480_ALT2)
+            send(fd, k380_seq_fkeys_off,  sizeof(k380_seq_fkeys_off));
+        else
+            send(fd, k480_seq_fkeys_off,  sizeof(k480_seq_fkeys_off));
 	}
 
 	close(fd);
