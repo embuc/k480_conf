@@ -140,54 +140,66 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* Open the Device with non-blocking reads. */
-	fd = open(dev, O_RDWR|O_NONBLOCK);
-	if (fd < 0)
-	{
-		perror("Unable to open device");
-		return 1;
-	}
+	char devPath [30];
 
-	/* Get Raw Info */
-	res = ioctl(fd, HIDIOCGRAWINFO, &info);
-	if (res < 0)
-	{
-		perror("error while getting info from device");
-	}
-	else
-    {
-		if (info.bustype != BUS_BLUETOOTH ||
-		    info.vendor  != HID_VENDOR_ID_LOGITECH ||
-		   (info.product != HID_DEVICE_ID_K480 &&
-            info.product != HID_DEVICE_ID_K480_ALT &&
-            info.product != HID_DEVICE_ID_K480_ALT2))
+	/* TODO: get real device count? */
+	for (int i = 0; i < 10; i++) {
+		printf("\n Trying device %d\n\n", i);
+		snprintf(devPath, 30, "/dev/hidraw%d", i);
+		dev = devPath;
+
+		/* Open the Device with non-blocking reads. */
+		fd = open(dev, O_RDWR|O_NONBLOCK);
+		if (fd < 0)
 		{
-			errno = EPERM;
-			perror("The given device is not a supported "
-			       "Logitech keyboard");
-			printf("Product : %x\n", info.product);
-
-			return 1;
+			perror("Unable to open device");
+			continue;
 		}
+
+		/* Get Raw Info */
+		res = ioctl(fd, HIDIOCGRAWINFO, &info);
+		if (res < 0)
+		{
+			perror("error while getting info from device");
+			continue;
+		}
+		else
+	    {
+			if (info.bustype != BUS_BLUETOOTH ||
+			    info.vendor  != HID_VENDOR_ID_LOGITECH ||
+			   (info.product != HID_DEVICE_ID_K480 &&
+	            info.product != HID_DEVICE_ID_K480_ALT &&
+	            info.product != HID_DEVICE_ID_K480_ALT2))
+			{
+				errno = EPERM;
+				perror("The given device is not a supported "
+				       "Logitech keyboard");
+				printf("Product : %x\n", info.product);
+
+				continue;
+			}
+		}
+
+		if (flag_fkeys)
+		{
+			printf("Sending ON: \n");
+	        if (info.product == HID_DEVICE_ID_K480_ALT2)
+	            send(fd, k380_seq_fkeys_on,  sizeof(k380_seq_fkeys_on));
+	        else
+	            send(fd, k480_seq_fkeys_on,  sizeof(k480_seq_fkeys_on));
+		}
+		else
+		{
+			printf("Sending OFF: \n");
+	        if (info.product == HID_DEVICE_ID_K480_ALT2)
+	            send(fd, k380_seq_fkeys_off,  sizeof(k380_seq_fkeys_off));
+	        else
+	            send(fd, k480_seq_fkeys_off,  sizeof(k480_seq_fkeys_off));
+		}
+
+		close(fd);
+		return 0;
 	}
 
-	if (flag_fkeys)
-	{
-		printf("Sending ON: \n");
-        if (info.product == HID_DEVICE_ID_K480_ALT2)
-            send(fd, k380_seq_fkeys_on,  sizeof(k380_seq_fkeys_on));
-        else
-            send(fd, k480_seq_fkeys_on,  sizeof(k480_seq_fkeys_on));
-	}
-	else
-	{
-		printf("Sending OFF: \n");
-        if (info.product == HID_DEVICE_ID_K480_ALT2)
-            send(fd, k380_seq_fkeys_off,  sizeof(k380_seq_fkeys_off));
-        else
-            send(fd, k480_seq_fkeys_off,  sizeof(k480_seq_fkeys_off));
-	}
-
-	close(fd);
-	return 0;
+	return 1;
 }
